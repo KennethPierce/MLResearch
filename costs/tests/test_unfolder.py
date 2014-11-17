@@ -1,5 +1,6 @@
 import unittest
-import MLResearch.costs.unfolder
+from costs import unfolder
+from costs.unfolder import BinTree as BinTree
 
 class ToyFold(unfolder.Fae):
     def unfoldHelper(self,x,y):
@@ -37,6 +38,6 @@ def test_toyfold():
     mybt7 = BinTree(0,[mybt0,mybt2])
     bts = [mybt0,mybt1,mybt2,mybt3,mybt4,mybt5,mybt6,mybt7]
     for bt in bts:
-        frae = Frae(ToyFold())
+        frae = unfolder.Frae(ToyFold())
         ct = frae.costTree(bt)
         assert ct == 0
