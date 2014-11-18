@@ -199,6 +199,22 @@ class Frae:
         bte = self.enfolder(bt)
         return costTree_rec(bte)
 
+    def d_costTree(self,bt):
+        """
+        return: W like array of the delta terms
+        """        
+        def d_costTree_rec(bte):
+            if bte.isLeaf:
+                return None
+            dW,_,_ =self.d_costTreeFlat(bte)
+            deltaList = [d_costTree_rec(i) for i in bte.ns]
+            deltaList = [i for i in deltaList if i is not None]
+            return sum(deltaList,dW)
+            
+        bte = self.enfolder(bt)
+        return d_costTree_rec(bte),(None,None),(None,None)
+
+
     def d_costTreeFlat(self,bte):
         btu = self.unfolder(bte,bte.v)
         bterroru,dwu = self.d_erroru(bte,btu)
