@@ -3,6 +3,7 @@
 *.pkl
 /mlr.egg-info/
 .spyderworkspace
+.spyderproject
 
 # Windows image file caches
 Thumbs.db
