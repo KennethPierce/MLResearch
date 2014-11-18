@@ -1,4 +1,5 @@
 import unittest
+import numpy
 from mlr.costs import unfolder
 from mlr.costs.unfolder import BinTree as BinTree
 
@@ -41,3 +42,43 @@ def test_toyfold():
         frae = unfolder.Frae(ToyFold())
         ct = frae.costTree(bt)
         assert ct == 0
+        
+def test_FraeMatrixFold():
+    size =2
+    lcnt =9
+    mf = unfolder.MatrixFold(size)
+    frae = unfolder.Frae(mf)    
+    def r():
+        return 0.5-numpy.random.rand(1,size)
+    def numGrad(bt,w):
+
+        s = w.shape
+        dw = w.copy()
+        epsilon=1e-6
+        for i in range(s[0]):
+            for j in range(s[1]):
+                save = w[i,j]
+                w[i,j] = save+epsilon
+                c1 = frae.costTreeFlat(bt)
+                w[i,j] = save-epsilon
+                c2 = frae.costTreeFlat(bt)
+                w[i,j] = save
+                dw[i,j] = (c1-c2)/(2*epsilon)
+        return dw
+                
+    def binTreeFromList(l):
+        cnt = len(l)
+        if cnt == 1:
+            return BinTree(l[0],None)
+        return BinTree(None,[binTreeFromList(l[:(cnt/2)]),binTreeFromList(l[(cnt/2):])])
+
+    bt = binTreeFromList([r() for i in range(lcnt)])
+    dwu = numGrad(bt,mf.wu)
+    dwe = numGrad(bt,mf.we)
+    bte = frae.enfolder(bt)
+    btu = frae.unfolder(bt,bte.v)
+    bterroru = frae.d_erroru(bte,btu)
+    bterrore = frae.d_errore(bte,bterroru.v)
+    assert numpy.allclose(dwu,mf.dwu)
+    assert numpy.allclose(dwe,mf.dwe)
+

@@ -65,7 +65,45 @@ class Fae:
         raise
         
        
-
+class MatrixFold(Fae) :
+    def __init__(self,s):
+        self.size =s;
+        r = (6.0/(3*s))**.5
+        print r,' r'
+        self.we = r-(2*r*numpy.random.rand(2*s,s))
+        self.wu = r-(2*r*numpy.random.rand(s,2*s))
+        self.dwe = numpy.zeros((2*s,s))
+        self.dwu = numpy.zeros((s,2*s))
+    def enfold(self,vs):
+        j = numpy.concatenate(vs,axis=1)
+        return numpy.tanh(j.dot(self.we))
+    def d_enfold(self,acts,err):
+        s=self.size
+        act = numpy.concatenate(acts,axis=1)
+        delta = act.T.dot(err)
+        self.dwe+=delta
+        e = err.dot(self.we.T)*(1-act*act)       
+        return (e[:,:s],e[:,s:])
+    def unfold(self,act):
+        s = self.size
+        x = numpy.tanh(act.dot(self.wu))
+        return (x[:,:s],x[:,s:])
+    def d_unfold(self,act,errs):
+        j = numpy.concatenate(errs,axis=1)
+        self.dwu+=act.T.dot(j)
+        ret = j.dot(self.wu.T)*(1-act*act)
+        return ret
+    def cost(self,vs):
+        v=vs[0]-vs[1]
+        return v.dot(v.T)/2
+        
+    def d_cost(self,vs):
+        return -(vs[0]-vs[1])*(1-vs[1]*vs[1])
+    def d_input(self,v,err):
+        """error to input"""
+        pass
+       
+       
   
 class Frae:
     """
