@@ -64,6 +64,19 @@ def test_FraeMatrixFold():
                 w[i,j] = save
                 dw[i,j] = (c1-c2)/(2*epsilon)
         return dw
+    def numGradW(bt,w,costfun):
+        dw = w.copy()
+        epsilon=1e-6
+        for i,j in enumerate(w):
+            save = w[i]
+            w[i] = save+epsilon
+            c1 = costfun(bt)
+            w[i] = save-epsilon
+            c2 = costfun(bt)
+            w[i] = save
+            dw[i] = (c1-c2)/(2*epsilon)
+        return dw
+
                 
     def binTreeFromList(l):
         cnt = len(l)
@@ -76,12 +89,10 @@ def test_FraeMatrixFold():
         mf = unfolder.MatrixFold(size)
         frae = unfolder.Frae(mf)    
         bt = binTreeFromList([r() for i in range(lcnt)])
-        dwu = numGrad(bt,mf.wu,frae.costTreeFlat)
-        dwe = numGrad(bt,mf.we,frae.costTreeFlat)
+        dw = numGradW(bt,mf.W,frae.costTreeFlat)
         bte = frae.enfolder(bt)
-        (bterroru,dwu1),(bterrore,dwe1) = frae.d_costTreeFlat(bte)
-        assert numpy.allclose(dwu,dwu1)
-        assert numpy.allclose(dwe,dwe1)
+        dW,(bterroru,dwu1),(bterrore,dwe1) = frae.d_costTreeFlat(bte)
+        assert numpy.allclose(dw,dW)
 
     test_flatGrad()
 

@@ -63,7 +63,13 @@ class Fae:
         return: error term for inputs
         """
         raise
-        
+    def deltaW(self,de,du):
+        """
+        de: enfold delta terms
+        du: unfold delta terms
+        return: W-shaped delta terms
+        """
+        raise        
        
 class MatrixFold(Fae) :
     def __init__(self,s):
@@ -73,7 +79,6 @@ class MatrixFold(Fae) :
         self.W = r-(2*r*numpy.random.rand(2*w))
         self.we = self.W[:w]
         self.we.shape = (2*s,s) #will raise instead of copy
-        self.we.reshape(2*s,s)
         self.wu = self.W[w:]
         self.wu.shape = (s,2*s) #will raise instead of copy
 #        self.we = r-(2*r*numpy.random.rand(2*s,s))
@@ -100,6 +105,9 @@ class MatrixFold(Fae) :
         delta = act.T.dot(j)
         ret = j.dot(self.wu.T)*(1-act*act)
         return ret,delta
+
+    def deltaW(self,de,du):
+        return numpy.concatenate([de.flatten(),du.flatten()])
 
     def cost(self,vs):
         v=vs[0]-vs[1]
@@ -193,9 +201,10 @@ class Frae:
 
     def d_costTreeFlat(self,bte):
         btu = self.unfolder(bte,bte.v)
-        bterroru,dwu1 = self.d_erroru(bte,btu)
-        bterrore,dwe1 = self.d_errore(bte,bterroru.v)
-        return (bterroru,dwu1),(bterrore,dwe1)
+        bterroru,dwu = self.d_erroru(bte,btu)
+        bterrore,dwe = self.d_errore(bte,bterroru.v)
+        dW = self.fc.deltaW(dwe,dwu)
+        return dW,(bterroru,dwu),(bterrore,dwe)
 
     def d_errore(self,bte,err):
         """
