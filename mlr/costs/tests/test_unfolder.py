@@ -1,6 +1,6 @@
 import unittest
-from costs import unfolder
-from costs.unfolder import BinTree as BinTree
+from mlr.costs import unfolder
+from mlr.costs.unfolder import BinTree as BinTree
 
 class ToyFold(unfolder.Fae):
     def unfoldHelper(self,x,y):
