@@ -69,9 +69,15 @@ class MatrixFold(Fae) :
     def __init__(self,s):
         self.size =s;
         r = (6.0/(3*s))**.5
-        print r,' r'
-        self.we = r-(2*r*numpy.random.rand(2*s,s))
-        self.wu = r-(2*r*numpy.random.rand(s,2*s))
+        w = 2*s*s
+        self.W = r-(2*r*numpy.random.rand(2*w))
+        self.we = self.W[:w]
+        self.we.shape = (2*s,s) #will raise instead of copy
+        self.we.reshape(2*s,s)
+        self.wu = self.W[w:]
+        self.wu.shape = (s,2*s) #will raise instead of copy
+#        self.we = r-(2*r*numpy.random.rand(2*s,s))
+#        self.wu = r-(2*r*numpy.random.rand(s,2*s))
 
     def enfold(self,vs):
         j = numpy.concatenate(vs,axis=1)
