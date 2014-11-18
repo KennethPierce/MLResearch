@@ -1,12 +1,11 @@
 import theano
-import theano.tensor as T
-from pylearn2.costs.cost import Cost as PyLearn2Cost
-from pylearn2.costs.cost import DefaultDataSpecsMixin 
-from pylearn2.utils import CallbackOp
 from theano.tensor.shared_randomstreams import RandomStreams
 from theano.compat.python2x import OrderedDict
 from theano.compat.six.moves import zip as izip
-import numpy
+
+from pylearn2.costs.cost import Cost as PyLearn2Cost
+from pylearn2.costs.cost import DefaultDataSpecsMixin 
+
 
 def SliceData(data):
     """
