@@ -1,6 +1,7 @@
 #python
 *.pyc
 *.pkl
+/mlr.egg-info/
 
 # Windows image file caches
 Thumbs.db
