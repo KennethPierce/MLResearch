@@ -191,6 +191,12 @@ class Frae:
         bte = self.enfolder(bt)
         return costTree_rec(bte)
 
+    def d_costTreeFlat(self,bte):
+        btu = self.unfolder(bte,bte.v)
+        bterroru,dwu1 = self.d_erroru(bte,btu)
+        bterrore,dwe1 = self.d_errore(bte,bterroru.v)
+        return (bterroru,dwu1),(bterrore,dwe1)
+
     def d_errore(self,bte,err):
         """
         bte: enfolded tree

@@ -79,9 +79,7 @@ def test_FraeMatrixFold():
         dwu = numGrad(bt,mf.wu,frae.costTreeFlat)
         dwe = numGrad(bt,mf.we,frae.costTreeFlat)
         bte = frae.enfolder(bt)
-        btu = frae.unfolder(bt,bte.v)
-        bterroru,dwu1 = frae.d_erroru(bte,btu)
-        bterrore,dwe1 = frae.d_errore(bte,bterroru.v)
+        (bterroru,dwu1),(bterrore,dwe1) = frae.d_costTreeFlat(bte)
         assert numpy.allclose(dwu,dwu1)
         assert numpy.allclose(dwe,dwe1)
 
