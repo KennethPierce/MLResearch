@@ -46,11 +46,10 @@ def test_toyfold():
 def test_FraeMatrixFold():
     size =2
     lcnt =9
-    mf = unfolder.MatrixFold(size)
-    frae = unfolder.Frae(mf)    
+
     def r():
         return 0.5-numpy.random.rand(1,size)
-    def numGrad(bt,w):
+    def numGrad(bt,w,costfun):
 
         s = w.shape
         dw = w.copy()
@@ -59,9 +58,9 @@ def test_FraeMatrixFold():
             for j in range(s[1]):
                 save = w[i,j]
                 w[i,j] = save+epsilon
-                c1 = frae.costTreeFlat(bt)
+                c1 = costfun(bt)
                 w[i,j] = save-epsilon
-                c2 = frae.costTreeFlat(bt)
+                c2 = costfun(bt)
                 w[i,j] = save
                 dw[i,j] = (c1-c2)/(2*epsilon)
         return dw
@@ -71,14 +70,23 @@ def test_FraeMatrixFold():
         if cnt == 1:
             return BinTree(l[0],None)
         return BinTree(None,[binTreeFromList(l[:(cnt/2)]),binTreeFromList(l[(cnt/2):])])
+        
 
-    bt = binTreeFromList([r() for i in range(lcnt)])
-    dwu = numGrad(bt,mf.wu)
-    dwe = numGrad(bt,mf.we)
-    bte = frae.enfolder(bt)
-    btu = frae.unfolder(bt,bte.v)
-    bterroru = frae.d_erroru(bte,btu)
-    bterrore = frae.d_errore(bte,bterroru.v)
-    assert numpy.allclose(dwu,mf.dwu)
-    assert numpy.allclose(dwe,mf.dwe)
+    def test_flatGrad():        
+        mf = unfolder.MatrixFold(size)
+        frae = unfolder.Frae(mf)    
+        bt = binTreeFromList([r() for i in range(lcnt)])
+        dwu = numGrad(bt,mf.wu,frae.costTreeFlat)
+        dwe = numGrad(bt,mf.we,frae.costTreeFlat)
+        bte = frae.enfolder(bt)
+        btu = frae.unfolder(bt,bte.v)
+        bterroru,dwu1 = frae.d_erroru(bte,btu)
+        bterrore,dwe1 = frae.d_errore(bte,bterroru.v)
+        assert numpy.allclose(dwu,dwu1)
+        assert numpy.allclose(dwe,dwe1)
 
+    test_flatGrad()
+
+if __name__ == "__main__":
+    test_FraeMatrixFold()
+    

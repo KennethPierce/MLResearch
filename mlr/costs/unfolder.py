@@ -72,33 +72,36 @@ class MatrixFold(Fae) :
         print r,' r'
         self.we = r-(2*r*numpy.random.rand(2*s,s))
         self.wu = r-(2*r*numpy.random.rand(s,2*s))
-        self.dwe = numpy.zeros((2*s,s))
-        self.dwu = numpy.zeros((s,2*s))
+
     def enfold(self,vs):
         j = numpy.concatenate(vs,axis=1)
         return numpy.tanh(j.dot(self.we))
-    def d_enfold(self,acts,err):
-        s=self.size
-        act = numpy.concatenate(acts,axis=1)
-        delta = act.T.dot(err)
-        self.dwe+=delta
-        e = err.dot(self.we.T)*(1-act*act)       
-        return (e[:,:s],e[:,s:])
+
     def unfold(self,act):
         s = self.size
         x = numpy.tanh(act.dot(self.wu))
         return (x[:,:s],x[:,s:])
+
+    def d_enfold(self,acts,err):
+        s=self.size
+        act = numpy.concatenate(acts,axis=1)
+        delta = act.T.dot(err)
+        e = err.dot(self.we.T)*(1-act*act)       
+        return (e[:,:s],e[:,s:]),delta
+
     def d_unfold(self,act,errs):
         j = numpy.concatenate(errs,axis=1)
-        self.dwu+=act.T.dot(j)
+        delta = act.T.dot(j)
         ret = j.dot(self.wu.T)*(1-act*act)
-        return ret
+        return ret,delta
+
     def cost(self,vs):
         v=vs[0]-vs[1]
         return v.dot(v.T)/2
         
     def d_cost(self,vs):
         return -(vs[0]-vs[1])*(1-vs[1]*vs[1])
+
     def d_input(self,v,err):
         """error to input"""
         pass
@@ -190,12 +193,14 @@ class Frae:
         """
         if bte.isLeaf:
             self.fc.d_input(bte.v,err) 
-            return BinTree(err,None)           
+            return BinTree(err,None),None           
         else:           
-            errs = self.fc.d_enfold([i.v for i in bte.ns],err)
+            errs,delta = self.fc.d_enfold([i.v for i in bte.ns],err)
             z = zip(errs,bte.ns)
-            bts=[self.d_errore(bt,e) for (e,bt) in z]
-            return BinTree(err,bts)
+            btsDelta=[self.d_errore(bt,e) for (e,bt) in z]
+            bts,deltaList = zip(*btsDelta)
+            deltaList = [i for i in deltaList if i is not None]
+            return BinTree(err,bts),sum(deltaList,delta)
             
     def d_erroru(self,bte,btu):
         """
@@ -206,11 +211,13 @@ class Frae:
         if bte.isLeaf:
             assert btu.isLeaf
             # bte.v is an input while btu.v is the unfolded value
-            return BinTree(self.fc.d_cost([bte.v,btu.v]),None)
+            return BinTree(self.fc.d_cost([bte.v,btu.v]),None),None
         else: 
             #errc = self.fc.d_cost([bte.v,btu.v])
             z = zip(bte.ns,btu.ns)
-            errTree = [self.d_erroru(e,u) for e,u in z]
+            errTreeDelta = [self.d_erroru(e,u) for e,u in z]
+            errTree,deltaList = zip(*errTreeDelta)
             err = [i.v for i in errTree]
-            erru = self.fc.d_unfold(btu.v,err)
-            return BinTree(erru,errTree)
+            erru,delta = self.fc.d_unfold(btu.v,err)
+            deltaList = [i for i in deltaList if i is not None]
+            return BinTree(erru,errTree),sum(deltaList,delta)
