@@ -1,17 +1,7 @@
 """folding recursive auto-encoder"""
-import collections
 import numpy
+from mlr.utils.tree import Tree as BinTree
 
-class BinTree(collections.namedtuple('BinTree',['v','ns'])):
-    """
-    Tree structure
-    v contains node's value
-    ns contains list of BinTrees
-    """
-    __slots__=()
-    @property
-    def isLeaf(self):
-        return self.ns == None
 
 class Fae:
     """Folding autoencoder"""

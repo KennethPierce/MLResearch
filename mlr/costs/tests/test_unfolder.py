@@ -1,7 +1,7 @@
 import unittest
 import numpy
 from mlr.costs import unfolder
-from mlr.costs.unfolder import BinTree as BinTree
+from mlr.utils.tree import Tree as BinTree
 
 class ToyFold(unfolder.Fae):
     def unfoldHelper(self,x,y):
