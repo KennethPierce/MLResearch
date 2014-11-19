@@ -14,3 +14,5 @@ def test_bidict():
     d[:'foobar'] = 123
     assert d[123:] == 'foobar'
     assert len(d) ==2
+    assert slice('foo',None) in d
+    assert slice('321',None) not in d
