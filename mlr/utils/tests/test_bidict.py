@@ -13,3 +13,4 @@ def test_bidict():
     assert d['foo':]=='bar'
     d[:'foobar'] = 123
     assert d[123:] == 'foobar'
+    assert len(d) ==2
