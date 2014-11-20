@@ -1,5 +1,5 @@
 ﻿import unittest
-import notheano
+import mlr.utils.notheano as notheano
 import numpy
 import theano
 import theano.tensor as T
