@@ -76,7 +76,6 @@ class TestMatrixFold(unittest.TestCase):
         dw = self.numGradW(bte,mf.W,cost)
         dW,(bterroru,dwu1),(bterrore,dwe1) = grad(bte)
         assert numpy.allclose(dw,dW)
-
         
     def test_FraeMatrixFold(self):   
         mf = unfolder.MatrixFold(self.size)
@@ -92,9 +91,13 @@ class TestMatrixFold(unittest.TestCase):
         bt = BinTree(self.r,ns)
         ttft = unfolder.TreeToFraeTree(mf)
         bt1 = ttft.Greedy(bt)
-        self.assertEqual(len(bt1.ns),2)
-        
-        
+        def checkLen(bt):
+            if bt.isLeaf:
+                return
+            self.assertTrue(len(bt.ns)==2)
+            for i in bt.ns:
+                checkLen(i)
+        checkLen(bt1)
 
 if __name__ == '__main__':
     unittest.main()        
