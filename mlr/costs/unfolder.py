@@ -1,6 +1,7 @@
 """folding recursive auto-encoder"""
 import numpy
 from mlr.utils.tree import Tree as BinTree
+from operator import itemgetter
 
 
 class Fae:
@@ -110,7 +111,38 @@ class MatrixFold(Fae) :
         """error to input"""
         pass
        
-       
+class TreeToFraeTree:
+    """
+    Methods to convert arbitrary trees with data in both leafs and non-leafs
+    """
+    def __init__(self,fc):
+        """
+        fc: fae class used to score fold options        
+        """
+        self.fc = fc      
+        self.frae = Frae(self.fc)
+        
+    def Greedy(self,node):
+        """
+        Preserve existing structure but fix nodes with too many and too few leaves
+        When fixing, select best scoring pair to merge
+        """
+        if node.isLeaf:
+            return node
+
+        def collapse(ng):
+            if len(ng)==1:
+                return ng
+            else:
+                z = zip(ng,ng[1:])
+                trees = [BinTree(self.fc.enfold([l.v,r.v]),[l,r]) for l,r in z]
+                cts = [self.frae.costTree(i) for i in trees]
+                idx,_ = min(enumerate(cts),key=lambda x:x[1])
+                ngc = ng[:idx] + [trees[idx]] + ng[idx+2:]
+                assert len(ngc) + 1 == len(ng)
+                return collapse(ngc)
+        ng = [self.Greedy(i) for i in node.ns]
+        return collapse(ng)[0]
   
 class Frae:
     """
