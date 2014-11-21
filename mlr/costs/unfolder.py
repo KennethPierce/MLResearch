@@ -1,7 +1,7 @@
 """folding recursive auto-encoder"""
 import numpy
 from mlr.utils.tree import Tree as BinTree
-from operator import itemgetter
+
 
 
 class Fae:
