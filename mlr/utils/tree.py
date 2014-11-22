@@ -16,3 +16,13 @@ class Tree(collections.namedtuple('Tree',['v','ns'])):
     @property
     def isLeaf(self):
         return self.ns == None
+    @property
+    def nodeCnt(self):
+        if self.isLeaf:
+            return 1
+        return 1 + sum([i.nodeCnt for i in self.ns])
+    @property
+    def depth(self):
+        if self.isLeaf:
+            return 1
+        return 1 + max([i.depth for i in self.ns])
