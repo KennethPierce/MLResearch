@@ -5,7 +5,13 @@ from theano.compat.six.moves import zip as izip
 
 from pylearn2.costs.cost import Cost as PyLearn2Cost
 from pylearn2.costs.cost import DefaultDataSpecsMixin 
+from pylearn2.datasets.dense_design_matrix import DenseDesignMatrix
+import numpy
 
+class SimpleList(DenseDesignMatrix):
+    def __init__(self,b,e):
+        n = numpy.array([[float(i)] for i in range(b,e)])
+        super(SimpleList,self).__init__(X=n)
 
 def SliceData(data):
     """
