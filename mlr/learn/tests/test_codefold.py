@@ -19,7 +19,7 @@ class TestCodeFold(unittest.TestCase):
         toInput = unfolder.Frae(toInputMF)
         model = codefold.CodeFoldModel(toInput)
         tvi = TreeVector(isize)
-        data = [Tree(3,[Tree(2,None),Tree(5,None),Tree(0,None)])]
+        data = [(Tree(3,[Tree(2,None),Tree(5,None),Tree(0,None)]),'metadata')]
         cost = codefold.CodeFoldCost(data,tvi)
         cost.cost(model,numpy.array([[0.0]]))
         cost.grad(model,numpy.array([[0.0]]))

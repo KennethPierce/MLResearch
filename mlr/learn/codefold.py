@@ -5,7 +5,11 @@ Created on Fri Nov 21 10:03:18 2014
 @author: Ken
 """
 from pylearn2.models.model import Model
+from pylearn2.space import VectorSpace
+from pylearn2.utils import sharedX
+
 import mlr.utils.notheano as notheano
+from mlr.utils.tree import Tree
 import mlr.costs.unfolder as unfolder
 
 class CodeFoldModel(Model):
@@ -18,8 +22,12 @@ class CodeFoldModel(Model):
         toLearn: Frae being learned.  If not given, learn with toInput
         """
         super(CodeFoldModel,self).__init__()
+        
         self.toInput = toInput
         self.toLearn = toInput
+        self.W= sharedX(self.toLearn.fc.W,name='W',borrow=True)
+        self._params=[self.W]
+        self.input_space=VectorSpace(dim=1)
 
         
 class CodeFoldCost(notheano.Cost):
@@ -38,7 +46,10 @@ class CodeFoldCost(notheano.Cost):
     def prepInput(self,model,dataIdxs):
         dataIdxs = notheano.SliceData(dataIdxs)
         assert len(dataIdxs)==1 # batchsize one only
-        tree = self.ds[dataIdxs[0]]
+        idx = dataIdxs[0]
+        assert idx < len(self.ds)
+        tree,meta = self.ds[idx]
+        assert(isinstance(tree,Tree))
         vtree = self.tv.convertTree(tree)
         btree = unfolder.TreeToFraeTree(model.toInput.fc).Greedy(vtree)
         return btree
@@ -49,7 +60,9 @@ class CodeFoldCost(notheano.Cost):
         
     def grad(self,model,dataIdxs):    
         btree = self.prepInput(model,dataIdxs)
-        return model.toLearn.d_costTree(btree)
+        g,_,_ =  model.toLearn.d_costTree(btree)
+        assert g.shape==model.toLearn.fc.W.shape
+        return g
         
         
         
