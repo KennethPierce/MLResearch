@@ -51,7 +51,7 @@ class CodeFoldCost(notheano.Cost):
         tree,meta = self.ds[idx]
         assert(isinstance(tree,Tree))
         vtree = self.tv.convertTree(tree)
-        btree = unfolder.TreeToFraeTree(model.toInput.fc).Greedy(vtree)
+        btree = unfolder.TreeToFraeTree(model.toInput.fc).binarySplit(vtree)
         return btree
     
     def cost(self,model,dataIdxs): 

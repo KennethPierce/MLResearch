@@ -88,9 +88,9 @@ class TestMatrixFold(unittest.TestCase):
     def test_TreeToFraeTree(self):
         mf = unfolder.MatrixFold(self.size)
         ns = [BinTree(self.r(),None) for i in range(10)]
-        bt = BinTree(self.r,ns)
+        bt = BinTree(self.r(),ns)
         ttft = unfolder.TreeToFraeTree(mf)
-        bt1 = ttft.Greedy(bt)
+        bt1 = ttft.greedy(bt)
         def checkLen(bt):
             if bt.isLeaf:
                 return

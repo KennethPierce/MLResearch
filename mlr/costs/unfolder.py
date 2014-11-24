@@ -121,15 +121,50 @@ class TreeToFraeTree:
         """
         self.fc = fc      
         self.frae = Frae(self.fc)
+    
+    def binarySplit(self,node):
+        """
+        fast but stupid split.  baseline performance test cost of greedy split
+        """
+        if node.isLeaf:
+            return node
+        def collapse(ns):
+            l = len(ns)
+            if l==1:
+                return ns
+            if l==2:
+                e = self.fc.enfold([ns[0].v,ns[1].v])
+                return [BinTree(e,ns)]
+            hl = l/2
+            return collapse(ns[:hl])+collapse(ns[hl:])
         
-    def Greedy(self,node):
+        ng = [self.binarySplit(i) for i in node.ns]        
+        n = collapse(ng)[0]
+        e = self.fc.enfold([node.v,n.v])
+        return BinTree(e,[BinTree(node.v,None),n])                  
+            
+        l = len(node.ns)
+        if l==1:
+            bsnl = BinTree(node.v,None)
+            bsnr = self.binarySplit(node.ns[0])            
+            e = self.fc.enfold([bsnl,bsnr])
+            return BinTree(e,[bsnl,bsnr])
+        hl = l/2
+        bsnl = self.binarySplit(node.ns[:hl])
+        bsnr = self.binarySplit(node.ns[hl:])            
+        e = self.fc.enfold([bsnl,bsnr])
+        return BinTree(e,[bsnl,bsnr])
+        
+            
+            
+    def greedy(self,node):
         """
         Preserve existing structure but fix nodes with too many and too few leaves
         When fixing, select best scoring pair to merge
         """
         if node.isLeaf:
             return node
-
+        
         def collapse(ng):
             if len(ng)==1:
                 return ng
@@ -141,8 +176,10 @@ class TreeToFraeTree:
                 ngc = ng[:idx] + [trees[idx]] + ng[idx+2:]
                 assert len(ngc) + 1 == len(ng)
                 return collapse(ngc)
-        ng = [self.Greedy(i) for i in node.ns]
-        return collapse(ng)[0]
+        ng = [self.greedy(i) for i in node.ns]        
+        n = collapse(ng)[0]
+        e = self.fc.enfold([node.v,n.v])
+        return BinTree(e,[BinTree(node.v,None),n])
   
 class Frae:
     """

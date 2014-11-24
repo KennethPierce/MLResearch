@@ -8,8 +8,14 @@ Created on Tue Nov 18 16:33:02 2014
 from mlr.utils.tree import Tree   
 import ast
 import os
-     
+import random
+import collections
+from pylearn2.utils import serial    
 from mlr.utils.bidict import BiDict
+
+class MetaData(collections.namedtuple('MetaData',['fn','astDump'])):
+    pass
+
 class DictValToInt:
     def __init__(self):
         self.ndict = BiDict()
@@ -49,7 +55,7 @@ class PyCode:
         t = branches(node)
         v = type(node).__name__
         vid = self.dict.mapTo(v)
-        return Tree(vid,t if t else None)
+        return Tree(vid,tuple(t) if t else None)
 
     def addExample(self,node,metaData):
         tree = self.toTree(node)
@@ -62,7 +68,8 @@ class PyCode:
                 p=ast.parse(f.read(),fn)
                 funs = [i for i in ast.walk(p) if type(i) == self.nodeType]
                 for i in funs:
-                    self.addExample(i,(fn,))
+                    m = MetaData(fn,ast.dump(i,False))
+                    self.addExample(i,m)
             except Exception:
                 p = None
 
@@ -73,3 +80,18 @@ class PyCode:
             for i in fns:
                 self.addFromFile(i)
         print
+
+def GenData(srcDir,fn='pycode_',maxNode=400):
+    """
+    Script to generate data for pylearn2 training
+    """
+    dl = []
+    pyc = PyCode(dl)
+    pyc.addFromDir(srcDir)
+    dl = [i for i in dl if i[0].nodeCnt < maxNode]
+    uniq = {i for i in dl}
+    dl = list(uniq)
+    random.shuffle(dl)
+    l = len(dl)
+    serial.save(fn+str(l)+'.pkl',dl)
+        
