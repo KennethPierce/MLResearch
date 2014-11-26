@@ -127,33 +127,24 @@ class TreeToFraeTree:
         fast but stupid split.  baseline performance test cost of greedy split
         """
         if node.isLeaf:
-            return node
+            return BinTree(node.v,None)
         def collapse(ns):
-            l = len(ns)
+            l = len(ns)            
+            assert l <> 0
             if l==1:
                 return ns
             if l==2:
-                e = self.fc.enfold([ns[0].v,ns[1].v])
-                return [BinTree(e,ns)]
-            hl = l/2
-            return collapse(ns[:hl])+collapse(ns[hl:])
+                return [BinTree(None,ns)]
+            hl = int(l/2)
+            return collapse(collapse(ns[:hl])+collapse(ns[hl:]))
         
         ng = [self.binarySplit(i) for i in node.ns]        
-        n = collapse(ng)[0]
-        e = self.fc.enfold([node.v,n.v])
-        return BinTree(e,[BinTree(node.v,None),n])                  
+        n = collapse(ng)
+        return BinTree(None,[BinTree(node.v,None)]+n)                  
             
-        l = len(node.ns)
-        if l==1:
-            bsnl = BinTree(node.v,None)
-            bsnr = self.binarySplit(node.ns[0])            
-            e = self.fc.enfold([bsnl,bsnr])
-            return BinTree(e,[bsnl,bsnr])
-        hl = l/2
-        bsnl = self.binarySplit(node.ns[:hl])
-        bsnr = self.binarySplit(node.ns[hl:])            
-        e = self.fc.enfold([bsnl,bsnr])
-        return BinTree(e,[bsnl,bsnr])
+
+        
+        
         
             
             
@@ -198,10 +189,11 @@ class Frae:
         returns enfolded btree
         """
         if bt.isLeaf :
+            assert(bt.v <> None)
             return bt
         else:
             ns = [self.enfolder(i) for i in bt.ns]
-            vs = [i.v for i in ns]
+            vs = [i.v for i in ns]  
             v = self.fc.enfold(vs)
             return BinTree(v,ns)
             

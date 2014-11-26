@@ -27,6 +27,8 @@ class TreeVector():
     
     def getVector(self,i):
         """get i-th vector"""
+        if i == None:
+            return None
         assert i >= 0
         self.growVectors(i)
         return self.vectors[i:(i+1),:]

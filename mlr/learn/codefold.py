@@ -16,7 +16,7 @@ class CodeFoldModel(Model):
     """
     This class is serialized to disk.
     """
-    def __init__(self,toInput):
+    def __init__(self,toInput,treeVector):
         """
         toInput: Frae used to make input a proper tree
         toLearn: Frae being learned.  If not given, learn with toInput
@@ -25,6 +25,8 @@ class CodeFoldModel(Model):
         
         self.toInput = toInput
         self.toLearn = toInput
+        self.tv = treeVector
+
         self.W= sharedX(self.toLearn.fc.W,name='W',borrow=True)
         self._params=[self.W]
         self.input_space=VectorSpace(dim=1)
@@ -34,14 +36,13 @@ class CodeFoldCost(notheano.Cost):
     """
     Fold algo can't use theano directly.  
     """
-    def __init__(self,dataset,treeVector):
+    def __init__(self,dataset):
         """
         dataset: list of trees<ints> to be trained with
         treeVector: ints->vectors
         """
         assert isinstance(dataset,list)
         self.ds = dataset
-        self.tv = treeVector
     
     def prepInput(self,model,dataIdxs):
         dataIdxs = notheano.SliceData(dataIdxs)
@@ -50,9 +51,9 @@ class CodeFoldCost(notheano.Cost):
         assert idx < len(self.ds)
         tree,meta = self.ds[idx]
         assert(isinstance(tree,Tree))
-        vtree = self.tv.convertTree(tree)
-        btree = unfolder.TreeToFraeTree(model.toInput.fc).binarySplit(vtree)
-        return btree
+        btree = unfolder.TreeToFraeTree(model.toInput.fc).binarySplit(tree)
+        vtree = model.tv.convertTree(btree)        
+        return vtree
     
     def cost(self,model,dataIdxs): 
         btree = self.prepInput(model,dataIdxs)

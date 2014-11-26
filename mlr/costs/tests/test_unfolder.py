@@ -28,8 +28,12 @@ class ToyFold(unfolder.Fae):
         y=nv[1]
         return (x-y)**2
 
-class TestToyFold(unittest.TestCase) :
-    def test_toyfold(self):
+
+class TestMatrixFold(unittest.TestCase):
+    
+    def setUp(self):
+        self.size=2    
+        self.lcnt=9
         mybt0 = BinTree(0,[BinTree(1,None),BinTree(2,None)])
         mybt1 = BinTree(0,[BinTree(3,None),mybt0])
         mybt2 = BinTree(0,[mybt0,mybt1])
@@ -38,17 +42,9 @@ class TestToyFold(unittest.TestCase) :
         mybt5 = BinTree(0,[mybt1,mybt2])
         mybt6 = BinTree(0,[mybt2,mybt0])
         mybt7 = BinTree(0,[mybt0,mybt2])
-        bts = [mybt0,mybt1,mybt2,mybt3,mybt4,mybt5,mybt6,mybt7]
-        for bt in bts:
-            frae = unfolder.Frae(ToyFold())
-            ct = frae.costTree(bt)
-            assert ct == 0
+        self.bts = [mybt0,mybt1,mybt2,mybt3,mybt4,mybt5,mybt6,mybt7]
 
-class TestMatrixFold(unittest.TestCase):
-    
-    def setUp(self):
-        self.size=2    
-        self.lcnt=9
+
 
     def r(self):
         return 0.5-numpy.random.rand(1,self.size)
@@ -76,6 +72,13 @@ class TestMatrixFold(unittest.TestCase):
         dw = self.numGradW(bte,mf.W,cost)
         dW,(bterroru,dwu1),(bterrore,dwe1) = grad(bte)
         assert numpy.allclose(dw,dW)
+
+
+    def test_toyfold(self):
+        for bt in self.bts:
+            frae = unfolder.Frae(ToyFold())
+            ct = frae.costTree(bt)
+            self.assertEqual(ct,0)
         
     def test_FraeMatrixFold(self):   
         mf = unfolder.MatrixFold(self.size)
@@ -85,7 +88,26 @@ class TestMatrixFold(unittest.TestCase):
         self.CheckGrad(bte,mf,frae.costTreeFlat,frae.d_costTreeFlat)
         self.CheckGrad(bte,mf,frae.costTree,frae.d_costTree)
 
-    def test_TreeToFraeTree(self):
+    def inOrder(self,bt,acc):
+        if bt.v <> None:
+            acc.append(bt.v)
+        if bt.isLeaf:
+            return acc
+        for i in bt.ns:
+            self.inOrder(i,acc)
+        return acc            
+            
+    def test_TreeToFraeTree_BinarySplit(self):
+        mf = unfolder.MatrixFold(self.size)
+        ttft = unfolder.TreeToFraeTree(mf)        
+        t = BinTree(44,[BinTree(4,self.bts)]+self.bts)
+        bt = ttft.binarySplit(t)
+        a = self.inOrder(t,[])
+        b = self.inOrder(bt,[])
+        self.assertEqual(len(a),len(b))
+        
+
+    def test_TreeToFraeTree_Greedy(self):
         mf = unfolder.MatrixFold(self.size)
         ns = [BinTree(self.r(),None) for i in range(10)]
         bt = BinTree(self.r(),ns)

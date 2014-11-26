@@ -17,12 +17,13 @@ class TestCodeFold(unittest.TestCase):
         isize = 3
         toInputMF = unfolder.MatrixFold(isize)
         toInput = unfolder.Frae(toInputMF)
-        model = codefold.CodeFoldModel(toInput)
         tvi = TreeVector(isize)
+        model = codefold.CodeFoldModel(toInput,tvi)
         data = [(Tree(3,[Tree(2,None),Tree(5,None),Tree(0,None)]),'metadata')]
-        cost = codefold.CodeFoldCost(data,tvi)
-        cost.cost(model,numpy.array([[0.0]]))
-        cost.grad(model,numpy.array([[0.0]]))
+        cost = codefold.CodeFoldCost(data)
+        idx0 = numpy.array([[0.0]])
+        cost.cost(model,idx0)
+        cost.grad(model,idx0)
         
 
 if __name__ == '__main__':
