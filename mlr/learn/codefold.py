@@ -12,6 +12,9 @@ import mlr.utils.notheano as notheano
 from mlr.utils.tree import Tree
 import mlr.costs.unfolder as unfolder
 
+from scipy.optimize import check_grad,approx_fprime
+import numpy
+
 class CodeFoldModel(Model):
     """
     This class is serialized to disk.
@@ -43,11 +46,9 @@ class CodeFoldCost(notheano.Cost):
         """
         assert isinstance(dataset,list)
         self.ds = dataset
+        self.grad = self.fast_grad
     
-    def prepInput(self,model,dataIdxs):
-        dataIdxs = notheano.SliceData(dataIdxs)
-        assert len(dataIdxs)==1 # batchsize one only
-        idx = dataIdxs[0]
+    def prepInput(self,model,idx):
         assert idx < len(self.ds)
         tree,meta = self.ds[idx]
         assert(isinstance(tree,Tree))
@@ -56,14 +57,33 @@ class CodeFoldCost(notheano.Cost):
         return vtree
     
     def cost(self,model,dataIdxs): 
-        btree = self.prepInput(model,dataIdxs)
-        return  model.toLearn.costTree(btree)
+        dataIdxs = notheano.SliceData(dataIdxs)
+        btrees = [self.prepInput(model,i) for i in dataIdxs]
+        costs = [model.toLearn.costTree(i) for i in btrees]
+        return sum(costs)/len(dataIdxs)
         
-    def grad(self,model,dataIdxs):    
-        btree = self.prepInput(model,dataIdxs)
-        g,_,_ =  model.toLearn.d_costTree(btree)
+    def fast_grad(self,model,dataIdxs):    
+        dataIdxs = notheano.SliceData(dataIdxs)
+        btrees = [self.prepInput(model,i) for i in dataIdxs]
+        grads = [model.toLearn.d_costTree(i)[0] for i in btrees]
+        g = sum(grads)/len(dataIdxs)
         assert g.shape==model.toLearn.fc.W.shape
         return g
         
         
+    def verify_grad(self,model,dataIdxs):        
+        def c(w):            
+            f = unfolder.Frae(unfolder.MatrixFold(model.toLearn.fc.size))
+            m = CodeFoldModel(f,model.tv)
+            m.toLearn.fc.W[:] = w[:]
+            return self.cost(m,dataIdxs)
+        def g(w):
+            f = unfolder.Frae(unfolder.MatrixFold(model.toLearn.fc.size))
+            m = CodeFoldModel(f,model.tv)
+            m.toLearn.fc.W[:] = w[:]
+            return self.fast_grad(m,dataIdxs)
+            
+        err = check_grad(c,g,model.toLearn.fc.W)        
+        grad = approx_fprime(model.toLearn.fc.W,c,1e-8)
+        return grad
         

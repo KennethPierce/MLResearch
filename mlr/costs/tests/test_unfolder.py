@@ -1,5 +1,7 @@
 import unittest
 import numpy
+
+from scipy.optimize import check_grad,approx_fprime
 from mlr.costs import unfolder
 from mlr.utils.tree import Tree as BinTree
 
@@ -43,7 +45,8 @@ class TestMatrixFold(unittest.TestCase):
         mybt6 = BinTree(0,[mybt2,mybt0])
         mybt7 = BinTree(0,[mybt0,mybt2])
         self.bts = [mybt0,mybt1,mybt2,mybt3,mybt4,mybt5,mybt6,mybt7]
-
+        self.bt = self.binTreeFromList([self.r() for i in range(self.lcnt)])
+        self.mf = unfolder.MatrixFold(self.size)
 
 
     def r(self):
@@ -81,12 +84,31 @@ class TestMatrixFold(unittest.TestCase):
             self.assertEqual(ct,0)
         
     def test_FraeMatrixFold(self):   
-        mf = unfolder.MatrixFold(self.size)
+        mf = self.mf
         frae = unfolder.Frae(mf)    
-        bt = self.binTreeFromList([self.r() for i in range(self.lcnt)])
+        bt = self.bt
         bte = frae.enfolder(bt)
         self.CheckGrad(bte,mf,frae.costTreeFlat,frae.d_costTreeFlat)
         self.CheckGrad(bte,mf,frae.costTree,frae.d_costTree)
+
+        
+    def test_GradViaScipy(self):  
+        mf = self.mf
+        bt = self.bt
+        def c(w):
+            f = unfolder.Frae(unfolder.MatrixFold(self.size))
+            f.fc.W[:] = w[:]
+            c = f.costTree(bt)
+            return c
+        def g(w):
+            f = unfolder.Frae(unfolder.MatrixFold(self.size))
+            f.fc.W[:] = w[:]
+            g,_,_ = f.d_costTree(bt)
+            return g
+            
+        err = check_grad(c,g,mf.W)
+        self.assertTrue(err < 1e-6)
+        
 
     def inOrder(self,bt,acc):
         if bt.v <> None:
