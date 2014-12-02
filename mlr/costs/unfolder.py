@@ -309,3 +309,69 @@ class Frae:
             erru,delta = self.fc.d_unfold(btu.v,err)
             deltaList = [i for i in deltaList if i is not None]
             return BinTree(erru,errTree),sum(deltaList,delta)
+
+
+class Frae_():
+    def __init__(self,fc):
+        self.fc = fc
+        self.We = fc.we
+        self.Wu = fc.wu
+        pass
+    
+    def prepInput(self,bt):
+        vnan = numpy.zeros((1,self.fc.size))
+        vnan[:] = numpy.nan
+        def leafsAtDepth(bt,dep):
+            res = numpy.zeros((2**dep,self.fc.size))
+            res[:]=numpy.nan
+            def leafAtDepth(bt,s): 
+                if bt.isLeaf:
+                    if s.start +1 == s.stop:
+                        assert vnan.shape == bt.v.shape
+                        res[s]=bt.v
+                else:
+                    if s.start +1 <> s.stop:
+                        assert len(bt.ns) == 2
+                        assert bt.v==None
+                        leafAtDepth(bt.ns[0],slice(s.start,s.stop/2))
+                        leafAtDepth(bt.ns[1],slice(s.stop/2,s.stop))
+            leafAtDepth(bt,slice(0,res.shape[0]))
+            return res
+        d = bt.depth
+        ret = [numpy.array(leafsAtDepth(bt,i)) for i in range(d,0,-1)]
+        return ret
+    
+    def enfolder(self,listInputs):
+        prev = numpy.zeros_like(listInputs[0])
+        ret = [listInputs[0]]
+        for i in listInputs:
+            prev = numpy.where(numpy.isnan(i),prev,i)
+            j = numpy.concatenate((prev[::2],prev[1::2]),axis=1)
+            act = numpy.tanh(j.dot(self.We))
+            prev = act
+            ret.append(act)
+        return ret
+        
+    def unfolder(self,listActs):
+        ret = []
+        prev = listActs[-1] 
+        for _ in listActs[0:-1]:
+            prev = numpy.tanh(prev.dot(self.Wu))
+            hl = self.Wu.shape[1]/2
+            val = numpy.zeros((2*prev.shape[0],hl))
+            val[::2] = prev[:,:hl]
+            val[1::2] = prev[:,hl:]
+            prev=val
+            ret.append(prev)
+        ret.reverse()
+        return ret     
+        
+    def coster(self,enf,unf):        
+        def cost(e,u):
+            diff = e-u
+            diff = numpy.where(numpy.isnan(e),0,diff)
+            sq = diff*diff
+            return numpy.sum(sq)
+        
+        z=zip(enf,unf)
+        return sum([cost(*i) for i in z])

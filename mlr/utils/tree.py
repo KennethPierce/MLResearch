@@ -24,5 +24,5 @@ class Tree(collections.namedtuple('Tree',['v','ns'])):
     @property
     def depth(self):
         if self.isLeaf:
-            return 1
+            return 0
         return 1 + max([i.depth for i in self.ns])
