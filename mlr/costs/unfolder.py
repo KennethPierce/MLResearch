@@ -327,8 +327,6 @@ class Frae_():
         self.tWe = T.reshape(self.tWe,(2*s,s))
         self.tWu = self.tW[w:]
         self.tWu = T.reshape(self.tWu,(s,2*s))
-        #self.costers = [self.tCoster(i) for i in range(1,maxDepth)]
-        #self.costers[0:0] =  [None] #prepend element to match depth
         self.costTrees = [self.tCostTree(i) for i in range(1,maxDepth)]        
         self.costTrees[0:0] = [None]
 

@@ -15,6 +15,10 @@ import mlr.costs.unfolder as unfolder
 from scipy.optimize import check_grad,approx_fprime
 import numpy
 
+
+   
+
+
 class CodeFoldModel(Model):
     """
     This class is serialized to disk.
@@ -34,6 +38,47 @@ class CodeFoldModel(Model):
         self._params=[self.W]
         self.input_space=VectorSpace(dim=1)
 
+
+class CodeFoldCost_(notheano.Cost):
+    """
+    Fold algo can't use theano directly.  
+    """
+    def __init__(self,dataset,treeDepth):
+        """
+        dataset: list of trees<ints> to be trained with
+        treeVector: ints->vectors
+        treeDepth: all inputed trees must be exactly this depth
+        """
+        assert isinstance(dataset,list)
+        self.ds = dataset
+        self.treeDepth = treeDepth
+
+    def prepInput(self,model,tree):        
+        assert tree.depth == self.treeDepth
+        tvtree = model.tv.convertTree(tree)
+        return model.toLearn.prepInput(tvtree)
+        
+    
+    def wrap(self,model,dataIdxs,funct):
+        dataIdxs = notheano.SliceData(dataIdxs)
+        trees = [self.ds[i] for i in dataIdxs]
+        pis =  [self.prepInput(model,i) for i in trees]
+        val = [funct(*i) for i in pis]
+        s =  sum(val)/len(dataIdxs)
+        return s
+        
+    
+    def cost(self,model,dataIdxs):
+        fc,fg = model.toLearn.costTrees[self.treeDepth]
+        c =  self.wrap(model,dataIdxs,fc)
+        assert type(c) == numpy.float64        
+        return numpy.array(c)
+        
+    def grad(self,model,dataIdxs):
+        fc,fg = model.toLearn.costTrees[self.treeDepth]
+        g =  self.wrap(model,dataIdxs,fg)
+        assert g.shape==model.toLearn.fc.W.shape 
+        return g
         
 class CodeFoldCost(notheano.Cost):
     """
