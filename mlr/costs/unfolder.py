@@ -310,36 +310,70 @@ class Frae:
             deltaList = [i for i in deltaList if i is not None]
             return BinTree(erru,errTree),sum(deltaList,delta)
 
+import scipy.sparse as sparse
+import theano
+import theano.tensor as T
 
 class Frae_():
-    def __init__(self,fc):
+    def __init__(self,fc,maxDepth=11):
         self.fc = fc
         self.We = fc.we
         self.Wu = fc.wu
-        pass
+        self.maxDepth = maxDepth
+        self.tW = theano.shared(fc.W,"W",borrow=True)
+        s = fc.size
+        w = 2*s*s
+        self.tWe = self.tW[:w]
+        self.tWe = T.reshape(self.tWe,(2*s,s))
+        self.tWu = self.tW[w:]
+        self.tWu = T.reshape(self.tWu,(s,2*s))
+        #self.costers = [self.tCoster(i) for i in range(1,maxDepth)]
+        #self.costers[0:0] =  [None] #prepend element to match depth
+        self.costTrees = [self.tCostTree(i) for i in range(1,maxDepth)]        
+        self.costTrees[0:0] = [None]
+
+    
+    def tCostTree(self,cnt):
+        tInputs = [T.dmatrix() for i in range(cnt)]
+        c = self.costTreeTheano(tInputs)
+        f = theano.function(tInputs,c)
+        g = theano.function(tInputs,theano.grad(c,self.tW))
+        return f,g
+
+    
+    def tCoster(self,cnt):
+        tInputs = [T.dmatrix() for i in range(cnt)]
+        e = self.enfolderTheano(tInputs)
+        u = self.unfolderTheano(e)
+        c = self.costerTheano(e,u)
+        f = theano.function(tInputs,c)
+        g = theano.function(tInputs,theano.grad(c,self.tW))
+        return f,g
     
     def prepInput(self,bt):
-        vnan = numpy.zeros((1,self.fc.size))
-        vnan[:] = numpy.nan
-        def leafsAtDepth(bt,dep):
-            res = numpy.zeros((2**dep,self.fc.size))
-            res[:]=numpy.nan
-            def leafAtDepth(bt,s): 
-                if bt.isLeaf:
-                    if s.start +1 == s.stop:
-                        assert vnan.shape == bt.v.shape
-                        res[s]=bt.v
-                else:
-                    if s.start +1 <> s.stop:
-                        assert len(bt.ns) == 2
-                        assert bt.v==None
-                        leafAtDepth(bt.ns[0],slice(s.start,s.stop/2))
-                        leafAtDepth(bt.ns[1],slice(s.stop/2,s.stop))
-            leafAtDepth(bt,slice(0,res.shape[0]))
-            return res
-        d = bt.depth
-        ret = [numpy.array(leafsAtDepth(bt,i)) for i in range(d,0,-1)]
+        def getLeafs(bt,state):
+            if bt.isLeaf:
+                yield (state,bt.v)
+            else:
+                for idx,t in enumerate(bt.ns):
+                    for i in getLeafs(t,state + [idx]):
+                        yield i
+        def getIdx(l):
+            return reduce(lambda prev,i : prev*2+i,l,0)
+        def nanMatrix(rows):
+            ret = numpy.zeros((rows,self.fc.size))
+            ret[:] = numpy.nan
+            return ret
+            
+        ret = [nanMatrix(2**i) for i in range(bt.depth+1)]
+        for l,v in getLeafs(bt,[]):
+            idx = getIdx(l)
+            ret[len(l)][idx] = v
+        ret = ret[1:]
+        ret.reverse()
+        
         return ret
+        
     
     def enfolder(self,listInputs):
         prev = numpy.zeros_like(listInputs[0])
@@ -351,6 +385,18 @@ class Frae_():
             prev = act
             ret.append(act)
         return ret
+
+    def enfolderTheano(self,listInputs):
+        prev = T.zeros_like(listInputs[0])
+        ret = [listInputs[0]]
+        for i in listInputs:
+            prev = T.where(T.isnan(i),prev,i)
+            j = T.concatenate((prev[::2],prev[1::2]),axis=1)
+            act = T.tanh(j.dot(self.tWe))
+            prev = act
+            ret.append(act)
+        return ret
+
         
     def unfolder(self,listActs):
         ret = []
@@ -365,7 +411,23 @@ class Frae_():
             ret.append(prev)
         ret.reverse()
         return ret     
-        
+
+    def unfolderTheano(self,listActs):
+        ret = []
+        prev = listActs[-1] 
+        for _ in listActs[0:-1]:
+            prev = T.tanh(prev.dot(self.tWu))
+            hl = self.Wu.shape[1]/2
+            #val = T.zeros((2*prev.shape[0],hl))
+            val = T.zeros((2*prev.shape[0],hl))
+            
+            val = T.set_subtensor(val[::2,:],prev[:,:hl])
+            val = T.set_subtensor(val[1::2,:],prev[:,hl:])
+            prev=val
+            ret.append(prev)
+        ret.reverse()
+        return ret     
+
     def coster(self,enf,unf):        
         def cost(e,u):
             diff = e-u
@@ -374,4 +436,93 @@ class Frae_():
             return numpy.sum(sq)
         
         z=zip(enf,unf)
-        return sum([cost(*i) for i in z])
+        costs = [cost(*i) for i in z]        
+        return sum(costs)
+
+
+    def costerTheano(self,enf,unf):        
+        def cost(e,u):
+            diff = e-u
+            diff = T.where(T.isnan(e),0,diff)
+            sq = diff*diff
+            return T.sum(sq)
+        
+        z=zip(enf,unf)
+        costs = [cost(*i) for i in z]        
+        return sum(costs)
+
+
+    def costTree(self,listInputs):
+        l=[]
+        enf = self.enfolder(listInputs)                
+        for i in range(len(enf),0,-1):            
+            e = enf[:i]
+            u = self.unfolder(e)
+            c = self.coster(e,u)
+            l.append(c)
+        return sum(l)
+        
+
+    def costTreeTheano(self,listInputs):
+        l=[]
+        enf = self.enfolderTheano(listInputs)                
+        for i in range(len(enf),0,-1):            
+            e = enf[:i]
+            u = self.unfolderTheano(e)
+            c = self.costerTheano(e,u)
+            l.append(c)
+        return T.sum(l)
+        
+
+        
+#### Sparse not fully implemented
+
+    def unfolderSparse(self,listActs):
+        ret = []
+        prev = listActs[-1] 
+        Wu = sparse.csr_matrix(self.Wu)
+        la = listActs[:]
+        la.reverse()
+        for act in la[0:-1]:
+            
+            prev = (prev.dot(Wu)).tanh()
+            hl = Wu.shape[1]/2
+            val = sparse.lil_matrix((2*prev.shape[0],hl))
+            val[::2] = prev[:,:hl]
+            val[1::2] = prev[:,hl:]
+            prev=val.tocsr()
+            ret.append(prev)
+        ret.reverse()
+        return ret             
+
+
+    def enfolderSparse(self,listInputs):
+        prev = sparse.csr_matrix((listInputs[0].shape))
+        ret = [listInputs[0]]
+        We = sparse.csr_matrix(self.We)
+        for i in listInputs:
+            prev = prev+i
+            j = sparse.hstack([prev[::2],prev[1::2]])
+            act = (j.dot(We)).tanh()
+            prev = act
+            ret.append(act)
+        return ret
+        
+    def prepInputSparse(self,bt):
+        def leafsAtDepth(bt,dep):
+            res = sparse.lil_matrix((2**dep,self.fc.size))            
+            def leafAtDepth(bt,s): 
+                if bt.isLeaf:
+                    if s.start +1 == s.stop:
+                        res[s]=bt.v
+                else:
+                    if s.start +1 <> s.stop:
+                        assert len(bt.ns) == 2
+                        assert bt.v==None
+                        leafAtDepth(bt.ns[0],slice(s.start,s.stop/2))
+                        leafAtDepth(bt.ns[1],slice(s.stop/2,s.stop))
+            leafAtDepth(bt,slice(0,res.shape[0]))
+            return res.tocsr()
+        d = bt.depth
+        ret = [leafsAtDepth(bt,i) for i in range(d,0,-1)]
+        return ret
