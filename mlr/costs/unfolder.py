@@ -315,7 +315,7 @@ import theano
 import theano.tensor as T
 
 class Frae_():
-    def __init__(self,fc,maxDepth=11):
+    def __init__(self,fc,maxDepth=6):
         self.fc = fc
         self.We = fc.we
         self.Wu = fc.wu
