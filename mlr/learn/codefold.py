@@ -11,11 +11,14 @@ from pylearn2.utils import sharedX
 import mlr.utils.notheano as notheano
 from mlr.utils.tree import Tree
 import mlr.costs.unfolder as unfolder
+from mlr.datagen.treevector import TreeVector
 
 from scipy.optimize import check_grad,approx_fprime
 import numpy
 
-
+from scipy.optimize import minimize
+import time
+import datetime
    
 
 
@@ -132,3 +135,39 @@ class CodeFoldCost(notheano.Cost):
         grad = approx_fprime(model.toLearn.fc.W,c,1e-8)
         return grad
         
+def minCodeFold_(data,size=50,mi=10,cfm=None):
+    """
+    Quick test of l-bfgs-b performance
+    """
+    depth = data[0].depth
+    if not cfm:
+        print 'time: ',time.time()    
+        toInput = unfolder.Frae_(unfolder.MatrixFold(size),depth+1)
+        print 'time: ',time.time()
+        tv = TreeVector(size)
+        cfm = CodeFoldModel(toInput,tv)
+    frae = cfm.toLearn
+    mf = frae.fc
+    cfc = CodeFoldCost_(data,depth)
+    dl = [[float(i)] for i in range(len(data))]
+    def cost(w):
+        mf.W[:] = w[:]
+        return cfc.cost(cfm,dl)
+        pass
+    def grad(w):
+        mf.W[:] = w[:]        
+        return cfc.grad(cfm,dl)
+        pass
+    def cb(w):
+        print '.',
+        pass
+    #print "cost: ",cost(mf.W)
+    t1 = time.time()
+    print 'time: ', time.ctime()
+    res = minimize(cost, mf.W, method='L-BFGS-B', jac = grad, options = {'maxiter':mi},callback=cb)
+    print
+    print "cost: ",res.fun
+    t2 = time.time()
+    print 'elapsed: ', t2-t1
+    return res,cfm
+    
