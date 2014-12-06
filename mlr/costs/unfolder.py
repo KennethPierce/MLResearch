@@ -145,34 +145,12 @@ class TreeToFraeTree:
 
         
         
-        
+      
             
             
-    def greedy(self,node):
-        """
-        Preserve existing structure but fix nodes with too many and too few leaves
-        When fixing, select best scoring pair to merge
-        """
-        if node.isLeaf:
-            return node
-        
-        def collapse(ng):
-            if len(ng)==1:
-                return ng
-            else:
-                z = zip(ng,ng[1:])
-                trees = [BinTree(self.fc.enfold([l.v,r.v]),[l,r]) for l,r in z]
-                cts = [self.frae.costTree(i) for i in trees]
-                idx,_ = min(enumerate(cts),key=lambda x:x[1])
-                ngc = ng[:idx] + [trees[idx]] + ng[idx+2:]
-                assert len(ngc) + 1 == len(ng)
-                return collapse(ngc)
-        ng = [self.greedy(i) for i in node.ns]        
-        n = collapse(ng)[0]
-        e = self.fc.enfold([node.v,n.v])
-        return BinTree(e,[BinTree(node.v,None),n])
+
   
-class Frae:
+class FraeNumpy:
     """
     Expects all BTree nodes to have form of either 0 or n children.  
     fc: instance of Fae
@@ -314,7 +292,7 @@ import scipy.sparse as sparse
 import theano
 import theano.tensor as T
 
-class Frae_():
+class Frae():
     def __init__(self,fc,maxDepth=6):
         self.fc = fc
         self.We = fc.we

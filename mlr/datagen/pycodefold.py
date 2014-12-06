@@ -13,12 +13,12 @@ class PyCodeFold():
         self.fc = fc
         self.tv = tv
         pass
-    def BinarySplitTrees(self,data,depth):
+    def binarySplitTrees(self,data,depth):       
         trees = [i[0] for i in data]
         binsplit = unfolder.TreeToFraeTree(self.fc).binarySplit
         btrees = [binsplit(i) for i in trees]
         dtrees = [i for i in pycode.getTrees(btrees,depth)]
-        uniq = {i for i in dtrees}
-        dtrees = list(uniq)
+#        uniq = {i for i in dtrees}
+#        dtrees = list(uniq)
         random.shuffle(dtrees)
         return dtrees

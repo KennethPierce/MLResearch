@@ -6,7 +6,7 @@ Created on Wed Dec 03 18:08:00 2014
 """
 import unittest
 from mlr.costs import unfolder
-from mlr.costs.unfolder import Frae_ 
+from mlr.costs.unfolder import Frae
 from mlr.utils.tree import Tree as BinTree
 import numpy
 
@@ -14,7 +14,7 @@ class TestFrae(unittest.TestCase):
     def setUp(self):
         self.size  = 1
         self.mf = unfolder.MatrixFold(self.size)
-        self.frae = Frae_(self.mf,maxDepth=3)
+        self.frae = Frae(self.mf,maxDepth=3)
         l = BinTree(self.r(),None)
         n1 = BinTree(None,[l,l])
         n2 = BinTree(None,[n1,n1])

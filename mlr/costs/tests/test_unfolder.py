@@ -79,13 +79,13 @@ class TestMatrixFold(unittest.TestCase):
 
     def test_toyfold(self):
         for bt in self.bts:
-            frae = unfolder.Frae(ToyFold())
+            frae = unfolder.FraeNumpy(ToyFold())
             ct = frae.costTree(bt)
             self.assertEqual(ct,0)
         
     def test_FraeMatrixFold(self):   
         mf = self.mf
-        frae = unfolder.Frae(mf)    
+        frae = unfolder.FraeNumpy(mf)    
         bt = self.bt
         bte = frae.enfolder(bt)
         self.CheckGrad(bte,mf,frae.costTreeFlat,frae.d_costTreeFlat)
@@ -96,12 +96,12 @@ class TestMatrixFold(unittest.TestCase):
         mf = self.mf
         bt = self.bt
         def c(w):
-            f = unfolder.Frae(unfolder.MatrixFold(self.size))
+            f = unfolder.FraeNumpy(unfolder.MatrixFold(self.size))
             f.fc.W[:] = w[:]
             c = f.costTree(bt)
             return c
         def g(w):
-            f = unfolder.Frae(unfolder.MatrixFold(self.size))
+            f = unfolder.FraeNumpy(unfolder.MatrixFold(self.size))
             f.fc.W[:] = w[:]
             g,_,_ = f.d_costTree(bt)
             return g
@@ -129,19 +129,7 @@ class TestMatrixFold(unittest.TestCase):
         self.assertEqual(len(a),len(b))
         
 
-    def test_TreeToFraeTree_Greedy(self):
-        mf = unfolder.MatrixFold(self.size)
-        ns = [BinTree(self.r(),None) for i in range(10)]
-        bt = BinTree(self.r(),ns)
-        ttft = unfolder.TreeToFraeTree(mf)
-        bt1 = ttft.greedy(bt)
-        def checkLen(bt):
-            if bt.isLeaf:
-                return
-            self.assertTrue(len(bt.ns)==2)
-            for i in bt.ns:
-                checkLen(i)
-        checkLen(bt1)
+
 
 if __name__ == '__main__':
     unittest.main()        

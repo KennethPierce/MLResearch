@@ -18,7 +18,7 @@ import numpy
 
 from scipy.optimize import minimize
 import time
-import datetime
+
    
 
 
@@ -42,7 +42,7 @@ class CodeFoldModel(Model):
         self.input_space=VectorSpace(dim=1)
 
 
-class CodeFoldCost_(notheano.Cost):
+class CodeFoldCost(notheano.Cost):
     """
     Fold algo can't use theano directly.  
     """
@@ -83,7 +83,7 @@ class CodeFoldCost_(notheano.Cost):
         assert g.shape==model.toLearn.fc.W.shape 
         return g
         
-class CodeFoldCost(notheano.Cost):
+class CodeFoldCostNumpy(notheano.Cost):
     """
     Fold algo can't use theano directly.  
     """
@@ -121,12 +121,12 @@ class CodeFoldCost(notheano.Cost):
         
     def verify_grad(self,model,dataIdxs):        
         def c(w):            
-            f = unfolder.Frae(unfolder.MatrixFold(model.toLearn.fc.size))
+            f = unfolder.FraeNumpy(unfolder.MatrixFold(model.toLearn.fc.size))
             m = CodeFoldModel(f,model.tv)
             m.toLearn.fc.W[:] = w[:]
             return self.cost(m,dataIdxs)
         def g(w):
-            f = unfolder.Frae(unfolder.MatrixFold(model.toLearn.fc.size))
+            f = unfolder.FraeNumpy(unfolder.MatrixFold(model.toLearn.fc.size))
             m = CodeFoldModel(f,model.tv)
             m.toLearn.fc.W[:] = w[:]
             return self.fast_grad(m,dataIdxs)
@@ -142,13 +142,13 @@ def minCodeFold_(data,size=50,mi=10,cfm=None):
     depth = data[0].depth
     if not cfm:
         print 'time: ',time.time()    
-        toInput = unfolder.Frae_(unfolder.MatrixFold(size),depth+1)
+        toInput = unfolder.Frae(unfolder.MatrixFold(size),depth+1)
         print 'time: ',time.time()
         tv = TreeVector(size)
         cfm = CodeFoldModel(toInput,tv)
     frae = cfm.toLearn
     mf = frae.fc
-    cfc = CodeFoldCost_(data,depth)
+    cfc = CodeFoldCost(data,depth)
     dl = [[float(i)] for i in range(len(data))]
     def cost(w):
         mf.W[:] = w[:]
