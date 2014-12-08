@@ -115,12 +115,12 @@ class TreeToFraeTree:
     """
     Methods to convert arbitrary trees with data in both leafs and non-leafs
     """
-    def __init__(self,fc):
+    def __init__(self,frae):
         """
         fc: fae class used to score fold options        
         """
-        self.fc = fc      
-        self.frae = Frae(self.fc)
+    
+        self.frae = frae
     
     def binarySplit(self,node):
         """
