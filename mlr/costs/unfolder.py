@@ -115,19 +115,27 @@ class TreeToFraeTree:
     """
     Methods to convert arbitrary trees with data in both leafs and non-leafs
     """
-    def __init__(self,frae):
+    def __init__(self,cfm):
         """
         fc: fae class used to score fold options        
         """
-    
-        self.frae = frae
-    
-    def binarySplit(self,node):
+        
+        self.cfm = cfm
+
+    def _binarySplit(self,node,collapse):
         """
         fast but stupid split.  baseline performance test cost of greedy split
         """
         if node.isLeaf:
             return BinTree(node.v,None)
+        
+        ng = [self._binarySplit(i,collapse) for i in node.ns]        
+        n = collapse(ng)
+        return BinTree(None,[BinTree(node.v,None)]+n)     
+        
+
+    
+    def middleSplit(self,node):
         def collapse(ns):
             l = len(ns)            
             assert l <> 0
@@ -137,12 +145,26 @@ class TreeToFraeTree:
                 return [BinTree(None,ns)]
             hl = int(l/2)
             return collapse(collapse(ns[:hl])+collapse(ns[hl:]))
-        
-        ng = [self.binarySplit(i) for i in node.ns]        
-        n = collapse(ng)
-        return BinTree(None,[BinTree(node.v,None)]+n)                  
-            
+        return self._binarySplit(node,collapse)
+    
+             
+    
 
+        
+    def greedySplit(self,node):
+        def collapse(ns):
+            l = len(ns)            
+            assert l <> 0
+            if l==1:
+                return ns
+            if l==2:
+                return [BinTree(None,ns)]
+            bts = [BinTree(None,i) for i in zip(ns,ns[1:])]
+            maxDepth = cfm.tv.numfeat
+#            cfc = codefold.CodeFoldCost(bts,?)
+#            cts = [cfm.]
+        return self._binarySplit(node,collapse)
+        
         
         
       

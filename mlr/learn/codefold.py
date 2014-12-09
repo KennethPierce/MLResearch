@@ -100,7 +100,7 @@ class CodeFoldCostNumpy(notheano.Cost):
         assert idx < len(self.ds)
         tree,meta = self.ds[idx]
         assert(isinstance(tree,Tree))
-        btree = unfolder.TreeToFraeTree(model.toInput.fc).binarySplit(tree)
+        btree = unfolder.TreeToFraeTree(None).middleSplit(tree)
         vtree = model.tv.convertTree(btree)        
         return vtree
     

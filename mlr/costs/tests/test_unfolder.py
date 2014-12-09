@@ -119,11 +119,10 @@ class TestMatrixFold(unittest.TestCase):
             self.inOrder(i,acc)
         return acc            
             
-    def test_TreeToFraeTree_BinarySplit(self):
-        mf = unfolder.MatrixFold(self.size)
-        ttft = unfolder.TreeToFraeTree(mf)        
+    def test_TreeToFraeTree_BinarySplit(self):        
+        ttft = unfolder.TreeToFraeTree(None)        
         t = BinTree(44,[BinTree(4,self.bts)]+self.bts)
-        bt = ttft.binarySplit(t)
+        bt = ttft.middleSplit(t)
         a = self.inOrder(t,[])
         b = self.inOrder(bt,[])
         self.assertEqual(len(a),len(b))
