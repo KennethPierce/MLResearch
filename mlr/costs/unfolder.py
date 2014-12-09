@@ -115,27 +115,32 @@ class TreeToFraeTree:
     """
     Methods to convert arbitrary trees with data in both leafs and non-leafs
     """
-    def __init__(self,cfm):
+    def __init__(self,mf):
         """
-        fc: fae class used to score fold options        
+        mf: fae class used to score fold options        
         """
         
-        self.cfm = cfm
+        self.mf = mf
 
-    def _binarySplit(self,node,collapse):
+    def _binarySplit(self,node,collapse,enfold):
         """
-        fast but stupid split.  baseline performance test cost of greedy split
+        node: recursively split to a binary tree
+        collapse: function of a list of trees will return a list of 1 trees
+        enfold: value to place in node.v of newly created nodes
         """
         if node.isLeaf:
             return BinTree(node.v,None)
         
-        ng = [self._binarySplit(i,collapse) for i in node.ns]        
-        n = collapse(ng)
-        return BinTree(None,[BinTree(node.v,None)]+n)     
+        ng = [self._binarySplit(i,collapse,enfold) for i in node.ns]        
+        ns = [BinTree(node.v,None)] + collapse(ng)
+        return BinTree(enfold(ns),ns)     
         
 
     
     def middleSplit(self,node):
+        """
+        Fast & stupid split.  
+        """
         def collapse(ns):
             l = len(ns)            
             assert l <> 0
@@ -145,25 +150,37 @@ class TreeToFraeTree:
                 return [BinTree(None,ns)]
             hl = int(l/2)
             return collapse(collapse(ns[:hl])+collapse(ns[hl:]))
-        return self._binarySplit(node,collapse)
+        return self._binarySplit(node,collapse,lambda x: None)
     
              
     
 
         
     def greedySplit(self,node):
+        """
+        One level deep cost function.  Select lowest cost split
+        """
+        def enfold(ns):
+            return self.mf.enfold([i.v for i in ns])
+        def cost(bt):
+            u = self.mf.unfold(bt.v)
+            e = [i.v for i in bt.ns]
+            c = [self.mf.cost(i) for i in zip(e,u)]
+            return sum(c)
         def collapse(ns):
             l = len(ns)            
             assert l <> 0
             if l==1:
                 return ns
             if l==2:
-                return [BinTree(None,ns)]
-            bts = [BinTree(None,i) for i in zip(ns,ns[1:])]
-            maxDepth = cfm.tv.numfeat
-#            cfc = codefold.CodeFoldCost(bts,?)
-#            cts = [cfm.]
-        return self._binarySplit(node,collapse)
+                return [BinTree(enfold(ns),ns)]
+            bts = [BinTree(enfold(i),i) for i in zip(ns,ns[1:])]
+            cts = [cost(i) for i in bts]
+            minIndex = min(list(enumerate(cts)),key=lambda k: k[1])[0]
+            ns[minIndex:(minIndex+2)] = [bts[minIndex]]
+            return collapse(ns)
+
+        return self._binarySplit(node,collapse,enfold)
         
         
         
@@ -516,7 +533,6 @@ class Frae():
                 else:
                     if s.start +1 <> s.stop:
                         assert len(bt.ns) == 2
-                        assert bt.v==None
                         leafAtDepth(bt.ns[0],slice(s.start,s.stop/2))
                         leafAtDepth(bt.ns[1],slice(s.stop/2,s.stop))
             leafAtDepth(bt,slice(0,res.shape[0]))

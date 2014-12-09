@@ -4,6 +4,7 @@ import numpy
 from scipy.optimize import check_grad,approx_fprime
 from mlr.costs import unfolder
 from mlr.utils.tree import Tree as BinTree
+from mlr.datagen.treevector import TreeVector
 
 class ToyFold(unfolder.Fae):
     def unfoldHelper(self,x,y):
@@ -117,16 +118,36 @@ class TestMatrixFold(unittest.TestCase):
             return acc
         for i in bt.ns:
             self.inOrder(i,acc)
-        return acc            
+        return acc           
+        
+    def getLeafs(self,bt,acc):
+        if bt.isLeaf:
+            acc.append(bt.v)
+        else:
+            for i in bt.ns:
+                self.getLeafs(i,acc)
+        return acc
             
-    def test_TreeToFraeTree_BinarySplit(self):        
+    def test_TreeToFraeTree_MiddleSplit(self):        
         ttft = unfolder.TreeToFraeTree(None)        
         t = BinTree(44,[BinTree(4,self.bts)]+self.bts)
         bt = ttft.middleSplit(t)
         a = self.inOrder(t,[])
-        b = self.inOrder(bt,[])
+        b = self.getLeafs(bt,[])
+        #assert same number of original node.v values == number leafs 
         self.assertEqual(len(a),len(b))
         
+    def test_TreeToFraeTree_GreedySplit(self):      
+        size=self.size
+        ttft = unfolder.TreeToFraeTree(unfolder.MatrixFold(size))        
+        t = BinTree(4,[BinTree(5,self.bts)]+self.bts)
+        tv = TreeVector(size)
+        t = tv.convertTree(t)        
+        bt = ttft.greedySplit(t)
+        a = self.inOrder(t,[])
+        b = self.getLeafs(bt,[])
+        #assert same number of original node.v values == number leafs 
+        self.assertEqual(len(a),len(b))
 
 
 
