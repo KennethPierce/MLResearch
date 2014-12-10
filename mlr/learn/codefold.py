@@ -36,8 +36,8 @@ class CodeFoldModel(Model):
         self.toInput = toInput
         self.toLearn = toInput
         self.tv = treeVector
-
-        self.W= sharedX(self.toLearn.fc.W,name='W',borrow=True)
+        
+        self.W= self.toLearn.tW
         self._params=[self.W]
         self.input_space=VectorSpace(dim=1)
 

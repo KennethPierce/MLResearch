@@ -6,7 +6,12 @@ from mlr.costs import unfolder
 from mlr.utils.tree import Tree as BinTree
 from mlr.datagen.treevector import TreeVector
 
+
+
 class ToyFold(unfolder.Fae):
+    def __init__(self):        
+        self.W =numpy.zeros((1,1))
+        
     def unfoldHelper(self,x,y):
         for i in range(x,y):
             if (i*(i+1)/2) > y:
@@ -55,15 +60,17 @@ class TestMatrixFold(unittest.TestCase):
 
     def numGradW(self,bt,w,costfun):
         dw = w.copy()
-        epsilon=1e-6
+        epsilon=1e-4
         for i,j in enumerate(w):
             save = w[i]
             w[i] = save+epsilon
             c1 = costfun(bt)
+            c1 = numpy.float(c1) #cast up from 32 to 64 bits
             w[i] = save-epsilon
             c2 = costfun(bt)
+            c2 = numpy.float(c2)
             w[i] = save
-            dw[i] = (c1-c2)/(2*epsilon)
+            dw[i] = (c1-c2)/(2*epsilon) #may down cast to 32 bits
         return dw
 
     def binTreeFromList(self,l):
@@ -75,7 +82,9 @@ class TestMatrixFold(unittest.TestCase):
     def CheckGrad(self,bte,mf,cost,grad):        
         dw = self.numGradW(bte,mf.W,cost)
         dW,(bterroru,dwu1),(bterrore,dwe1) = grad(bte)
-        assert numpy.allclose(dw,dW)
+        print dw,' =dw'
+        print dW,' =dW'
+        assert numpy.allclose(dw,dW,rtol=1e-3,atol=1e-4)
 
 
     def test_toyfold(self):
@@ -107,9 +116,12 @@ class TestMatrixFold(unittest.TestCase):
             g,_,_ = f.d_costTree(bt)
             return g
             
-        err = check_grad(c,g,mf.W)
-        self.assertTrue(err < 1e-6)
-        
+        #err = check_grad(c,g,mf.W)
+        approx = approx_fprime(mf.W,c,1e-4)
+        grad = g(mf.W)
+        print approx," =approx"
+        print grad," =grad"
+        self.assertTrue(numpy.allclose(approx,grad,rtol=1e-3,atol=1e-4))
 
     def inOrder(self,bt,acc):
         if bt.v <> None:

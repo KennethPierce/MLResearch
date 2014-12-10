@@ -33,4 +33,3 @@ class TestFrae(unittest.TestCase):
         cts = [(frae.costTree(i),frae.costTrees[d][0](*i)) for i in pis]
         for ct1,ct2 in cts:
             self.assertTrue(numpy.allclose(ct1,ct2))
-        

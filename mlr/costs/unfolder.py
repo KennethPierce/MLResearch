@@ -1,6 +1,9 @@
 """folding recursive auto-encoder"""
 import numpy
 from mlr.utils.tree import Tree as BinTree
+import scipy.sparse as sparse
+import theano
+import theano.tensor as T
 
 
 
@@ -67,7 +70,7 @@ class MatrixFold(Fae) :
         self.size =s;
         r = (6.0/(3*s))**.5
         w = 2*s*s
-        self.W = r-(2*r*numpy.random.rand(2*w))
+        self.W = (r-(2*r*numpy.random.rand(2*w))).astype(theano.config.floatX)
         self.we = self.W[:w]
         self.we.shape = (2*s,s) #will raise instead of copy
         self.wu = self.W[w:]
@@ -199,6 +202,7 @@ class FraeNumpy:
         fc: fold class instance.  Should inherit from Fae class 
         """
         self.fc = fc
+        self.tW = theano.shared(fc.W,"W",borrow=True)
         
     def enfolder(self,bt):
         """
@@ -327,9 +331,7 @@ class FraeNumpy:
             deltaList = [i for i in deltaList if i is not None]
             return BinTree(erru,errTree),sum(deltaList,delta)
 
-import scipy.sparse as sparse
-import theano
-import theano.tensor as T
+
 
 class Frae():
     def __init__(self,fc,maxDepth=6):
@@ -349,7 +351,7 @@ class Frae():
 
     
     def tCostTree(self,cnt):
-        tInputs = [T.dmatrix() for i in range(cnt)]
+        tInputs = [T.matrix('tcosttree') for i in range(cnt)]
         c = self.costTreeTheano(tInputs)
         f = theano.function(tInputs,c)
         g = theano.function(tInputs,theano.grad(c,self.tW))
@@ -357,7 +359,7 @@ class Frae():
 
     
     def tCoster(self,cnt):
-        tInputs = [T.dmatrix() for i in range(cnt)]
+        tInputs = [T.matrix('tcoster') for i in range(cnt)]
         e = self.enfolderTheano(tInputs)
         u = self.unfolderTheano(e)
         c = self.costerTheano(e,u)
@@ -376,14 +378,14 @@ class Frae():
         def getIdx(l):
             return reduce(lambda prev,i : prev*2+i,l,0)
         def nanMatrix(rows):
-            ret = numpy.zeros((rows,self.fc.size))
+            ret = numpy.zeros((rows,self.fc.size),dtype=theano.config.floatX)
             ret[:] = numpy.nan
             return ret
             
         ret = [nanMatrix(2**i) for i in range(bt.depth+1)]
         for l,v in getLeafs(bt,[]):
             idx = getIdx(l)
-            ret[len(l)][idx] = v
+            ret[len(l)][idx] = v.astype(theano.config.floatX)
         ret = ret[1:]
         ret.reverse()
         

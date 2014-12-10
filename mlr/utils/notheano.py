@@ -39,7 +39,7 @@ class Cost(DefaultDataSpecsMixin,PyLearn2Cost):
         space.validate(data)
         #really no point to using these random values.  Could be zeros
         srng = RandomStreams(seed=234)
-        return OverwriteOp(self.cost,model)(srng.uniform(low=0.0,high=1000.0),data)
+        return OverwriteOp(self.cost,model)(srng.uniform(low=0.0,high=1000.0,dtype=theano.config.floatX),data)
     def get_gradients(self, model, data, ** kwargs):
         """
         Overwrites the Cost.get_gradients so we can inject our theano.Op
@@ -48,7 +48,7 @@ class Cost(DefaultDataSpecsMixin,PyLearn2Cost):
         """
         srng = RandomStreams(seed=232)
         params = list(model.get_params())
-        grads = [OverwriteOp(self.grad,model)(srng.uniform(size=i.shape),data) for i in params]
+        grads = [OverwriteOp(self.grad,model)(srng.uniform(size=i.shape,dtype=theano.config.floatX),data) for i in params]
         gradients = OrderedDict(izip(params, grads))
         updates = OrderedDict()
         return gradients, updates        
@@ -96,4 +96,5 @@ class OverwriteOp(theano.gof.Op):
         """
         xin,xin_data = inputs
         xout, = output_storage
-        xout[0] = self.callback(self.usrData,xin_data)
+        numpyVal =  self.callback(self.usrData,xin_data)
+        xout[0] = numpyVal.astype(theano.config.floatX)
