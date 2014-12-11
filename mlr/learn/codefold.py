@@ -66,8 +66,11 @@ class CodeFoldCost(notheano.Cost):
         dataIdxs = notheano.SliceData(dataIdxs)
         trees = [self.ds[i] for i in dataIdxs]
         pis =  [self.prepInput(model,i) for i in trees]
-        val = [funct(*i) for i in pis]
-        s =  sum(val)/len(dataIdxs)
+        #val = [funct(*i) for i in pis]
+        #s =  sum(val)/len(dataIdxs)
+        stacked = [numpy.concatenate(i,axis=0) for i in zip(*pis)]
+        val = funct(*stacked)
+        s =  val/len(dataIdxs)
         return s
         
     
