@@ -26,3 +26,17 @@ class Tree(collections.namedtuple('Tree',['v','ns'])):
         if self.isLeaf:
             return 0
         return 1 + max([i.depth for i in self.ns])
+        
+    def getSubTrees(self,depth):
+        def getTrees(data,dep):
+            """
+            Yield trees and subtrees with depth exactly equal dep
+            """    
+            for i in data:
+                if i.depth == dep: 
+                    yield i
+                elif i.depth > dep:
+                    for j in getTrees(i.ns,dep):
+                        yield j        
+        return getTrees([self],depth)
+    

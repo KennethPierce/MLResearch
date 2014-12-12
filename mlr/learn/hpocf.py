@@ -16,7 +16,7 @@ import pylearn2.train as train
 from mlr.utils.notheano import SimpleList
 from pylearn2.training_algorithms.sgd import SGD
 from pylearn2.termination_criteria import EpochCounter
-from pylearn2.training_algorithms.learning_rule import Momentum
+from pylearn2.training_algorithms.learning_rule import AdaDelta
 from hyperopt.pyll.stochastic import sample
 from hyperopt import  fmin, tpe, hp, STATUS_OK, Trials
 import time
@@ -40,7 +40,7 @@ def opt(space):
     validds = SimpleList(500,1000)
     mds = {'train':trainds,'test':testds,'valid':validds}
     tc = EpochCounter(space['epoch'])
-    lr = Momentum(space['momentum'])
+    lr = AdaDelta()
     sgd = SGD(
                 learning_rate=space['lrate'],
                 batch_size=space['bsize'],
@@ -73,9 +73,9 @@ def optCodeFold(numEvals):
                 'epoch': 3+hp.randint('epoch',6),
 #                'tvsize': 10+10*hp.randint('tvsize',5),
                 'samples': 10000+5000*hp.randint('samps',3),
-                'lrate': 10**-(4+hp.randint('lrate',3)),
+                'lrate': 10**-(7+hp.randint('lrate',3)),
                 'bsize': 2+(hp.randint('bsize',3)),
-                'momentum': .5 + .1*(hp.randint('momemnt',4))
+                
 
             }
 

@@ -1,5 +1,6 @@
 """folding recursive auto-encoder"""
 import numpy
+import itertools
 from mlr.utils.tree import Tree as BinTree
 import scipy.sparse as sparse
 import theano
@@ -185,9 +186,18 @@ class TreeToFraeTree:
 
         return self._binarySplit(node,collapse,enfold)
         
+    def splitTrees(self,split,data,depth):
+        trees = [i[0] for i in data]        
+        btrees = [split(i) for i in trees]
+        subtrees = [i.getSubTrees(depth) for i in btrees]
+        dtrees = list(itertools.chain(*subtrees))
+        return dtrees
+
+    def middleSplitTrees(self,data,depth):       
+        return self.splitTrees(self.middleSplit,data,depth)        
         
-        
-      
+    def greedySplitTrees(self,data,depth):       
+        return self.splitTrees(self.greedySplit,data,depth)       
             
             
 
