@@ -171,6 +171,8 @@ class TreeToFraeTree:
             e = [i.v for i in bt.ns]
             c = [self.mf.cost(i) for i in zip(e,u)]
             return sum(c)
+
+        
         def collapse(ns):
             l = len(ns)            
             assert l <> 0
@@ -178,16 +180,27 @@ class TreeToFraeTree:
                 return ns
             if l==2:
                 return [BinTree(enfold(ns),ns)]
-            bts = [BinTree(enfold(i),i) for i in zip(ns,ns[1:])]
-            cts = [cost(i) for i in bts]
-            minIndex = min(list(enumerate(cts)),key=lambda k: k[1])[0]
-            ns[minIndex:(minIndex+2)] = [bts[minIndex]]
+
+            bts=[]
+            cts=[]                        
+            s = 0
+            e = len(ns)
+            while len(ns)>2 :
+                enfs = [BinTree(enfold(i),i) for i in zip(ns[s:e],ns[s+1:e])]
+                bts[s:e] = enfs
+                cts[s:e] = [cost(i) for i in enfs]                
+                mi = min(list(enumerate(cts)),key=lambda k: k[1])[0]
+                if mi :
+                    s = mi-1
+                else:
+                    s = mi
+                e = mi+2
+                ns[mi:e] = [bts[mi]]
             return collapse(ns)
 
         return self._binarySplit(node,collapse,enfold)
         
-    def splitTrees(self,split,data,depth):
-        trees = [i[0] for i in data]        
+    def splitTrees(self,split,trees,depth):
         btrees = [split(i) for i in trees]
         subtrees = [i.getSubTrees(depth) for i in btrees]
         dtrees = list(itertools.chain(*subtrees))

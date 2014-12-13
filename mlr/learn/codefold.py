@@ -56,21 +56,28 @@ class CodeFoldCost(notheano.Cost):
         self.ds = dataset
         self.treeDepth = treeDepth
 
-    def prepInput(self,model,tree):        
-        assert tree.depth == self.treeDepth
-        tvtree = model.tv.convertTree(tree)
-        return model.toLearn.prepInput(tvtree)
+    def prepInput(self,model,trees): 
+        """
+        model: frae
+        trees: input trees
+        Each nary-tree may become 0 or more binary trees of depth x.
+        Large trees will have tops cut off 
+        """           
+        tvtrees = [model.tv.convertTree(i) for i in trees]
+        ttft = unfolder.TreeToFraeTree(model.toLearn.fc)
+        gtrees = ttft.greedySplitTrees(tvtrees,self.treeDepth)
+        return [model.toLearn.prepInput(i) for i in gtrees]
         
     
     def wrap(self,model,dataIdxs,funct):
         dataIdxs = notheano.SliceData(dataIdxs)
         trees = [self.ds[i] for i in dataIdxs]
-        pis =  [self.prepInput(model,i) for i in trees]
+        pis =  self.prepInput(model,trees)
         #val = [funct(*i) for i in pis]
         #s =  sum(val)/len(dataIdxs)
         stacked = [numpy.concatenate(i,axis=0) for i in zip(*pis)]
         val = funct(*stacked)
-        s =  val/len(dataIdxs)
+        s =  val/len(pis)
         return s
         
     

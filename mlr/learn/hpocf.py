@@ -29,9 +29,10 @@ def opt(space):
     global data
     global frae
     global tv
+    global depth
     t0 = time.time()
 
-    depth = data[0].depth
+  
     cfm = codefold.CodeFoldModel(frae,tv)
     cfm.toLearn.fc.W[:] = W[:]        
     cfc = codefold.CodeFoldCost(data,depth)
