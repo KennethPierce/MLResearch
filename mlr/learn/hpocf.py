@@ -37,9 +37,10 @@ def opt(space):
     cfm.toLearn.fc.W[:] = W[:]        
     cfc = codefold.CodeFoldCost(data,depth)
     trainds = SimpleList(1000,space['samples'])
-    testds = SimpleList(0,500)
-    validds = SimpleList(500,1000)
-    mds = {'train':trainds,'test':testds,'valid':validds}
+    trainms = SimpleList(1000,1100)    
+    testms = SimpleList(0,100)
+    validms = SimpleList(900,1000)
+    mds = {'train':trainms,'test':testms,'valid':validms}
     tc = EpochCounter(space['epoch'])
     lr = AdaDelta()
     sgd = SGD(
