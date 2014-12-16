@@ -145,11 +145,10 @@ class CodeFoldCostNumpy(notheano.Cost):
         grad = approx_fprime(model.toLearn.fc.W,c,1e-8)
         return grad
         
-def minCodeFold_(data,size=50,mi=10,cfm=None):
+def lbfgsCodeFold(data,depth=10,size=50,mi=10,cfm=None):
     """
-    Quick test of l-bfgs-b performance
+    Quick test of l-bfgs-b performance - its terrible
     """
-    depth = data[0].depth
     if not cfm:
         print 'time: ',time.time()    
         toInput = unfolder.Frae(unfolder.MatrixFold(size),depth+1)
@@ -161,12 +160,15 @@ def minCodeFold_(data,size=50,mi=10,cfm=None):
     cfc = CodeFoldCost(data,depth)
     dl = [[float(i)] for i in range(len(data))]
     def cost(w):
+        w = w.astype(mf.W.dtype)
         mf.W[:] = w[:]
-        return cfc.cost(cfm,dl)
+        return cfc.cost(cfm,dl).astype(numpy.float64)
         pass
     def grad(w):
+        w = w.astype(mf.W.dtype)
         mf.W[:] = w[:]        
-        return cfc.grad(cfm,dl)
+        g = cfc.grad(cfm,dl).astype(numpy.float64)
+        return g
         pass
     def cb(w):
         print '.',
@@ -174,7 +176,7 @@ def minCodeFold_(data,size=50,mi=10,cfm=None):
     #print "cost: ",cost(mf.W)
     t1 = time.time()
     print 'time: ', time.ctime()
-    res = minimize(cost, mf.W, method='L-BFGS-B', jac = grad, options = {'maxiter':mi},callback=cb)
+    res = minimize(cost, mf.W.astype(numpy.float64), method='L-BFGS-B', jac = grad, options = {'maxiter':mi},callback=cb)
     print
     print "cost: ",res.fun
     t2 = time.time()
