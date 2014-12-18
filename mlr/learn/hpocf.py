@@ -22,6 +22,35 @@ from hyperopt import  fmin, tpe, hp, STATUS_OK, Trials
 import time
 
 
+def cfGen(data,frae,tv,depth):
+    cfm = codefold.CodeFoldModel(frae,tv)    
+    cfc = codefold.CodeFoldCost(data,depth)
+    return (cfm,cfc)    
+
+def trainFrae(space,data,frae,tv,depth):
+    cfm,cfc = cfGen(data,frae,tv,depth)
+    trainds = SimpleList(1000,space['samples'])
+    trainms = SimpleList(1000,1100)    
+    testms = SimpleList(0,100)
+    validms = SimpleList(900,1000)
+    ms = {'train':trainms,'test':testms,'valid':validms}
+    tc = EpochCounter(space['epoch'])
+    lr = AdaDelta()
+    sgd = SGD(
+                learning_rate=space['lrate'],
+                batch_size=space['bsize'],
+                learning_rule=lr,
+                monitoring_dataset=ms,
+                cost=cfc,
+                termination_criterion=tc
+             )
+    trainobj = train.Train(
+        dataset=trainds,
+        model=cfm,
+        algorithm=sgd
+    )
+    trainobj.main_loop()
+    return trainobj
 
 def opt(space):
     print space
@@ -32,32 +61,9 @@ def opt(space):
     global depth
     t0 = time.time()
 
-  
-    cfm = codefold.CodeFoldModel(frae,tv)
-    cfm.toLearn.fc.W[:] = W[:]        
-    cfc = codefold.CodeFoldCost(data,depth)
-    trainds = SimpleList(1000,space['samples'])
-    trainms = SimpleList(1000,1100)    
-    testms = SimpleList(0,100)
-    validms = SimpleList(900,1000)
-    mds = {'train':trainms,'test':testms,'valid':validms}
-    tc = EpochCounter(space['epoch'])
-    lr = AdaDelta()
-    sgd = SGD(
-                learning_rate=space['lrate'],
-                batch_size=space['bsize'],
-                learning_rule=lr,
-                monitoring_dataset=mds,
-                cost=cfc,
-                termination_criterion=tc
-             )
-#        (learning_rate=space.lrate,batch_size=space.bsize,)
-    trainobj = train.Train(
-        dataset=trainds,
-        model=cfm,
-        algorithm=sgd
-    )
-    trainobj.main_loop()
+    frae.fc.W[:] = W[:]     
+    trainobj = trainFrae(space,data,frae,tv,depth)
+
     testobj = trainobj.algorithm.monitor.channels['test_objective'].val_record
     t1 = time.time()
     improved = testobj[-1]
@@ -73,11 +79,9 @@ def optCodeFold(numEvals):
 
     space = {
                 'epoch': 3+hp.randint('epoch',6),
-#                'tvsize': 10+10*hp.randint('tvsize',5),
                 'samples': 10000+5000*hp.randint('samps',3),
                 'lrate': 10**-(7+hp.randint('lrate',3)),
                 'bsize': 2+(hp.randint('bsize',3)),
-                
 
             }
 
